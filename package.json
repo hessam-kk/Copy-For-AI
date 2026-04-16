@@ -1,0 +1,37 @@
+{
+  "name": "copy-fn-signatures",
+  "displayName": "Copy Function Signatures",
+  "description": "Right-click any source file → copy all function signatures to clipboard",
+  "version": "1.0.0",
+  "engines": { "vscode": "^1.75.0" },
+  "categories": ["Other"],
+  "activationEvents": [],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "copy-fn-signatures.copy",
+        "title": "Copy Function Signatures"
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "copy-fn-signatures.copy",
+          "when": "resourceExtname =~ /\\.(py|js|ts|java|go|rs|cpp|c|cs|rb|php|swift|kt)$/",
+          "group": "6_copypath@99"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "copy-fn-signatures.copy",
+          "when": "resourceExtname =~ /\\.(py|js|ts|java|go|rs|cpp|c|cs|rb|php|swift|kt)$/",
+          "group": "9_cutcopypaste@99"
+        }
+      ]
+    }
+  },
+  "devDependencies": {
+    "@vscode/vsce": "^3.0.0"
+  }
+}
