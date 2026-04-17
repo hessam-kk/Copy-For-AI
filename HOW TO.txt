@@ -1,0 +1,5 @@
+node --version && npm --version
+
+mkdir -p /home/claude/copy-fn-signatures && cd /home/claude/copy-fn-signatures && npm init -y && npm install --save-dev @vscode/vsce 2>&1 | tail -5
+
+cd /home/claude/copy-fn-signatures && npx @vscode/vsce package --no-dependencies 2>&1
