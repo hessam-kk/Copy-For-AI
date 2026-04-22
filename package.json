@@ -3,6 +3,10 @@
   "displayName": "Copy Function Signatures",
   "description": "Right-click any source file → copy all function signatures to clipboard",
   "version": "1.0.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hessam-kk/Copy-For-AI"
+  },
   "engines": { "vscode": "^1.75.0" },
   "categories": ["Other"],
   "activationEvents": [],
