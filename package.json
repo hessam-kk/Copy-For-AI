@@ -31,6 +31,9 @@
       ]
     }
   },
+  "scripts": {
+    "test": "node --test"
+  },
   "devDependencies": {
     "@vscode/vsce": "^3.0.0"
   }
