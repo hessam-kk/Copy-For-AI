@@ -100,6 +100,7 @@ const EXTRACTORS = {
     const results = [];
     const lines = src.split('\n');
     let currentImpl = null;
+    let braceDepth = 0;
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
@@ -108,13 +109,16 @@ const EXTRACTORS = {
       const implMatch = line.match(/impl(?:<[^>]*>)?\s+(?:\w+\s+for\s+)?(\w+)/);
       if (implMatch) {
         currentImpl = implMatch[1];
-        continue;
+        braceDepth = 0;
       }
 
-      // Detect closing brace of impl
-      if (currentImpl && /^\s*\}\s*$/.test(line)) {
-        currentImpl = null;
-        continue;
+      // Track brace depth so impl stays scoped until its own closing brace
+      if (currentImpl) {
+        braceDepth += (line.match(/\{/g) || []).length;
+        braceDepth -= (line.match(/\}/g) || []).length;
+        if (braceDepth <= 0) {
+          currentImpl = null;
+        }
       }
 
       // Detect function
@@ -137,14 +141,24 @@ const EXTRACTORS = {
     const results = [];
     const lines = src.split('\n');
     let currentClass = null;
+    let classIndent = -1;
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
+      const indent = (line.match(/^\s*/)[0] || '').length;
 
       // Detect class/module definition
       const classMatch = line.match(/^\s*(class|module)\s+(\w+)/);
       if (classMatch) {
         currentClass = classMatch[2];
+        classIndent = indent;
+        continue;
+      }
+
+      // Class/module ends when `end` appears at the class's indentation
+      if (currentClass && /^\s*end\s*$/.test(line) && indent === classIndent) {
+        currentClass = null;
+        classIndent = -1;
         continue;
       }
 
@@ -163,6 +177,8 @@ const EXTRACTORS = {
     const results = [];
     const lines = src.split('\n');
     let currentClass = null;
+    let inClass = false;
+    let braceDepth = 0;
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
@@ -171,7 +187,18 @@ const EXTRACTORS = {
       const classMatch = line.match(/class\s+(\w+)/);
       if (classMatch) {
         currentClass = classMatch[1];
-        continue;
+        inClass = true;
+        braceDepth = 0;
+      }
+
+      // Track braces so class scope closes on its own closing brace
+      if (inClass) {
+        braceDepth += (line.match(/\{/g) || []).length;
+        braceDepth -= (line.match(/\}/g) || []).length;
+        if (braceDepth <= 0) {
+          currentClass = null;
+          inClass = false;
+        }
       }
 
       // Detect function
@@ -188,15 +215,28 @@ const EXTRACTORS = {
     const results = [];
     const lines = src.split('\n');
     let currentType = null;
+    let inType = false;
+    let braceDepth = 0;
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
 
-      // Detect class/struct/enum definition
-      const typeMatch = line.match(/(?:public|private|internal|open|fileprivate|\s)*(?:class|struct|enum|protocol)\s+(\w+)/);
+      // Detect class/struct/enum definition (not `class func` methods)
+      const typeMatch = line.match(/(?:public|private|internal|open|fileprivate|\s)*(?:class|struct|enum|protocol)\s+(?!func\b)(\w+)/);
       if (typeMatch) {
         currentType = typeMatch[1];
-        continue;
+        inType = true;
+        braceDepth = 0;
+      }
+
+      // Track braces so type scope closes on its own closing brace
+      if (inType) {
+        braceDepth += (line.match(/\{/g) || []).length;
+        braceDepth -= (line.match(/\}/g) || []).length;
+        if (braceDepth <= 0) {
+          currentType = null;
+          inType = false;
+        }
       }
 
       // Detect function
@@ -260,10 +300,54 @@ function extractJsTs(src) {
   return results;
 }
 
+/**
+ * Group signatures by class and format them into the clipboard output.
+ * @param {string} fileName name used in the header comment
+ * @param {Array<{class: ?string, signature: string}>} sigs extractor results
+ * @returns {string} formatted output
+ */
+function buildOutput(fileName, sigs) {
+  // Group by class, keeping signature as the identity so an extractor that
+  // reports the same function both inside and outside a class emits it once.
+  const classMap = new Map();
+  const standalone = [];
+  const seen = new Set();
+
+  for (const { class: cls, signature } of sigs) {
+    const key = cls ? `${cls}\u0000${signature}` : `\u0000${signature}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    if (cls) {
+      if (!classMap.has(cls)) classMap.set(cls, []);
+      classMap.get(cls).push(signature);
+    } else {
+      standalone.push(signature);
+    }
+  }
+
+  let output = `# Function signatures from ${fileName}\n`;
+
+  for (const [cls, methods] of classMap) {
+    output += `\nclass ${cls} {\n`;
+    for (const m of methods) {
+      output += `  ${m}\n`;
+    }
+    output += `}\n`;
+  }
+
+  if (standalone.length > 0) {
+    output += `\n${standalone.join('\n\n')}\n`;
+  }
+
+  return output;
+}
+
 function extractCStyleWithClass(src, classPattern, fnPattern) {
   const results = [];
   const lines = src.split('\n');
   let currentClass = null;
+  let inClass = false;
+  let braceDepth = 0;
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
@@ -272,7 +356,18 @@ function extractCStyleWithClass(src, classPattern, fnPattern) {
     const classMatch = line.match(classPattern);
     if (classMatch) {
       currentClass = classMatch[1];
-      continue;
+      inClass = true;
+      braceDepth = 0;
+    }
+
+    // Track braces so class scope closes on its own closing brace
+    if (inClass) {
+      braceDepth += (line.match(/\{/g) || []).length;
+      braceDepth -= (line.match(/\}/g) || []).length;
+      if (braceDepth <= 0) {
+        currentClass = null;
+        inClass = false;
+      }
     }
 
     // Detect function
@@ -317,39 +412,7 @@ function activate(context) {
     }
 
     const fileName = path.basename(filePath);
-
-    // Group by class, keeping signature as the identity so an extractor that
-    // reports the same function both inside and outside a class emits it once.
-    const classMap = new Map();
-    const standalone = [];
-    const seen = new Set();
-
-    for (const { class: cls, signature } of sigs) {
-      const key = cls ? `${cls} ${signature}` : ` ${signature}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      if (cls) {
-        if (!classMap.has(cls)) classMap.set(cls, []);
-        classMap.get(cls).push(signature);
-      } else {
-        standalone.push(signature);
-      }
-    }
-
-    // Build output
-    let output = `# Function signatures from ${fileName}\n`;
-
-    for (const [cls, methods] of classMap) {
-      output += `\nclass ${cls} {\n`;
-      for (const m of methods) {
-        output += `  ${m}\n`;
-      }
-      output += `}\n`;
-    }
-
-    if (standalone.length > 0) {
-      output += `\n${standalone.join('\n\n')}\n`;
-    }
+    const output = buildOutput(fileName, sigs);
 
     await vscode.env.clipboard.writeText(output);
     vscode.window.showInformationMessage(
@@ -362,4 +425,4 @@ function activate(context) {
 
 function deactivate() {}
 
-module.exports = { activate, deactivate };
+module.exports = { activate, deactivate, EXTRACTORS, extractJsTs, extractCStyleWithClass, buildOutput };
