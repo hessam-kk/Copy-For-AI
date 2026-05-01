@@ -2,7 +2,7 @@
   "name": "copy-fn-signatures",
   "displayName": "Copy Function Signatures",
   "description": "Right-click any source file → copy all function signatures to clipboard",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "repository": {
     "type": "git",
     "url": "https://github.com/hessam-kk/Copy-For-AI"
