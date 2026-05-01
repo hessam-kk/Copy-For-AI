@@ -360,8 +360,10 @@ function extractCStyleWithClass(src, classPattern, fnPattern) {
       braceDepth = 0;
     }
 
-    // Track braces so class scope closes on its own closing brace
-    if (inClass) {
+    // Track braces so class scope closes on its own closing brace.
+    // Only close when the line actually has a brace: the class declaration
+    // line itself has none and would otherwise close the scope instantly.
+    if (inClass && /\{|\}/.test(line)) {
       braceDepth += (line.match(/\{/g) || []).length;
       braceDepth -= (line.match(/\}/g) || []).length;
       if (braceDepth <= 0) {
