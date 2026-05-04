@@ -47,32 +47,55 @@ You'll see a confirmation like `Copied 4 signatures from sample.cs`.
 
 ### Sample output
 
-For a file like [samples/sample.cs](samples/sample.cs):
+For a file like [samples/sample.py](samples/sample.py):
 
-```csharp
-public struct Point
-{
-    public int X { get; set; }
-    public void Move(int dx, int dy) { ... }
-}
+```python
+@dataclass
+class Point:
+    def distance(self, other: "Point") -> float: ...
+    @staticmethod
+    def origin() -> "Point": ...
+
+def area_of_circle(radius: float) -> float: ...
 ```
 
 The clipboard receives:
 
 ```markdown
-# Function signatures from sample.cs
+# Function signatures from sample.py
 
 class Point {
-  public void Move(int dx, int dy)
-  public override string ToString()
+  def distance(self,
+                 other: "Point") -> float
+  def origin() -> "Point"
+  def from_polar(cls, r: float, theta: float) -> "Point"
 }
 
-class IShape {
-  double Area()
+def area_of_circle(radius: float) -> float
+
+def wrap(value, default=lambda: None)
+```
+
+Or for a Java file like [samples/sample.java](samples/sample.java):
+
+```java
+public class Calculator {
+    public double add(double a, double b) { ... }
+    protected static double multiply(double a, double b) { ... }
+}
+```
+
+```markdown
+# Function signatures from sample.java
+
+class Calculator {
+  public double add(double a, double b)
+  protected static double multiply(double a, double b)
+  private synchronized void clear()
 }
 
-class Circle {
-  public double Area()
+class Runner {
+  static void main(String[] args)
 }
 ```
 
