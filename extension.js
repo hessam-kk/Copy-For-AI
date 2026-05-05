@@ -229,8 +229,10 @@ const EXTRACTORS = {
         braceDepth = 0;
       }
 
-      // Track braces so type scope closes on its own closing brace
-      if (inType) {
+      // Track braces so type scope closes on its own closing brace.
+      // Only close when the line actually has a brace: the type declaration
+      // line itself has none and would otherwise close the scope instantly.
+      if (inType && /\{|\}/.test(line)) {
         braceDepth += (line.match(/\{/g) || []).length;
         braceDepth -= (line.match(/\}/g) || []).length;
         if (braceDepth <= 0) {
@@ -267,8 +269,10 @@ function extractJsTs(src) {
       braceDepth = 0;
     }
 
-    // Track brace depth for class scope
-    if (inClass) {
+    // Track brace depth for class scope.
+    // Only close when the line actually has a brace: the class declaration
+    // line itself has none and would otherwise close the scope instantly.
+    if (inClass && /\{|\}/.test(line)) {
       braceDepth += (line.match(/\{/g) || []).length;
       braceDepth -= (line.match(/\}/g) || []).length;
       if (braceDepth <= 0 && currentClass) {
