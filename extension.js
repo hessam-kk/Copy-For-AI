@@ -81,16 +81,10 @@ const EXTRACTORS = {
       const funcMatch = line.match(/func\s+(?:\((\w+)\s+\*?(\w+)\)\s*)?(\w+)\s*\([^)]*\)(?:\s*(?:\([^)]*\)|\w[\w*\s]*))?/);
       if (!funcMatch) continue;
 
-      const receiver = funcMatch[1];
       const receiverType = funcMatch[2];
-      const funcName = funcMatch[3];
 
       // If it has a receiver, use that as class context
-      if (receiverType) {
-        results.push({ class: receiverType, signature: funcMatch[0].trim() });
-      } else {
-        results.push({ class: null, signature: funcMatch[0].trim() });
-      }
+      results.push({ class: receiverType || null, signature: funcMatch[0].trim() });
     }
     return results;
   },
