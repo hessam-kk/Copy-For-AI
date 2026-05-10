@@ -8,8 +8,12 @@
     "url": "https://github.com/hessam-kk/Copy-For-AI"
   },
   "license": "MIT",
-  "engines": { "vscode": "^1.75.0" },
-  "categories": ["Other"],
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Other"
+  ],
   "activationEvents": [],
   "main": "./extension.js",
   "contributes": {
@@ -37,7 +41,9 @@
     }
   },
   "scripts": {
-    "test": "node --test"
+    "test": "node --test",
+    "sync-version": "node -e \"const fs=require('fs');const v=process.env.npm_package_version;const tag=process.env.GITHUB_REF_NAME||'';const m=tag.match(/^v?(.+)$/);const ver=m&&m[1]||v;const p=JSON.parse(fs.readFileSync('package.json','utf8'));if(p.version!==ver){p.version=ver;fs.writeFileSync('package.json',JSON.stringify(p,null,2)+'\\n');console.log('version -> '+ver);}\"",
+    "prepackage": "npm run sync-version"
   },
   "devDependencies": {
     "@vscode/vsce": "^3.0.0"
