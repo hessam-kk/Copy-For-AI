@@ -27,9 +27,12 @@ jobs:
       - name: Run tests
         run: npm test
 
-      - name: Package VSIX
+      - name: Sync version from tag
         env:
           GITHUB_REF_NAME: ${{ github.ref_name }}
+        run: npm run sync-version
+
+      - name: Package VSIX
         run: npx @vscode/vsce package --no-dependencies
 
       - name: Create GitHub release
